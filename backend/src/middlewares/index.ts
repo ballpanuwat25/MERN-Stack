@@ -1,7 +1,8 @@
 import express from 'express';
+import jwt from 'jsonwebtoken';
 import { get, merge } from 'lodash';
 
-import { getUserBySessionToken } from '../db/users';
+import { getUserById } from '../model/users';
 
 export const isOwner = (req: express.Request, res: express.Response, next: express.NextFunction) => {
     try {
@@ -25,21 +26,28 @@ export const isOwner = (req: express.Request, res: express.Response, next: expre
 
 export const isAuthenticated = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
     try {
-        const sessionToken = req.cookies['sessionToken-AUTH'];
+        const token = req.cookies['sessionToken-AUTH'];
 
-        if (!sessionToken) {
+        if (!token) {
             return res.sendStatus(403);
         }
 
-        const exitingUser = await getUserBySessionToken(sessionToken);
+        jwt.verify(token, 'ef32ea7a4d29caaabcdcfb2754873caff5e76b7ec2054f84ee07543e432e2bf0', async (err: Error, decoded: any) => {
+            if (err) {
+                return res.sendStatus(403);
+            }
 
-        if(!exitingUser) {
-            return res.sendStatus(403);
-        }
+            const userId = decoded.userId;
+            const existingUser = await getUserById(userId);
 
-        merge(req, { identity: exitingUser });
+            if (!existingUser) {
+                return res.sendStatus(403);
+            }
 
-        return next();
+            merge(req, { identity: existingUser });
+
+            return next();
+        });
     } catch (error) {
         console.log(error);
         return res.sendStatus(400);
