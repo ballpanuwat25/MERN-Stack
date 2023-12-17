@@ -1,7 +1,7 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
 
-import { getUserByEmail, createUser } from '../model/users';
+import { getUserByUsername, createUser } from '../model/users';
 import { random, authentication } from '../helpers';
 
 export const register = async (req: express.Request, res: express.Response) => {
@@ -13,7 +13,7 @@ export const register = async (req: express.Request, res: express.Response) => {
             return res.sendStatus(400);
         }
 
-        const existingUser = await getUserByEmail(email);
+        const existingUser = await getUserByUsername(email);
 
         if (existingUser) {
             return res.sendStatus(400);
@@ -39,13 +39,13 @@ export const register = async (req: express.Request, res: express.Response) => {
 
 export const login = async (req: express.Request, res: express.Response) => {
     try {
-        const { email, password } = req.body;
+        const { username, password } = req.body;
 
-        if (!email || !password) {
+        if (!username || !password) {
             return res.sendStatus(400);
         }
 
-        const user = await getUserByEmail(email).select('+authentication.salt +authentication.password');
+        const user = await getUserByUsername(username).select('+authentication.salt +authentication.password');
 
         if (!user) {
             return res.sendStatus(400);
@@ -70,3 +70,17 @@ export const login = async (req: express.Request, res: express.Response) => {
         return res.sendStatus(400);
     }
 };
+
+export const logout = (req: express.Request, res: express.Response) => {
+    try {
+      // Clear the sessionToken in the database or perform any other necessary cleanup
+  
+      // Clear the sessionToken cookie on the client side
+      res.clearCookie('sessionToken-AUTH', { domain: 'localhost', path: '/' });
+  
+      return res.sendStatus(200);
+    } catch (error) {
+      console.error(error);
+      return res.sendStatus(500);
+    }
+  };
