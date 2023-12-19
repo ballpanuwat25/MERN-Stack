@@ -1,10 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import Header from '../components/Header';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+
+import Footer from '../components/Footer';
 
 const Products: React.FC = () => {
   const [products, setProducts] = useState<any[]>([]);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     checkTokenExpiry();
@@ -12,16 +16,26 @@ const Products: React.FC = () => {
 
   const getProducts = async () => {
     try {
-      const response = await axios.get('http://localhost:8080/products');
+      const token = localStorage.getItem('sessionToken');
+      const response = await axios.get('http://localhost:8080/products', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       setProducts(response.data);
     } catch (error) {
       console.error(error);
     }
   };
 
-  const deleteProduct = async (id: number) => {
+  const deleteProduct = async (_id: number) => {
     try {
-      await axios.delete(`http://localhost:8080/products/${id}`);
+      const token = localStorage.getItem('sessionToken');
+      await axios.delete(`http://localhost:8080/products/${_id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       getProducts();
     } catch (error) {
       console.error(error);
@@ -35,16 +49,28 @@ const Products: React.FC = () => {
     if (token && expirationTime) {
       const currentTime = new Date().getTime();
 
-      // Check if the token has expired
       if (currentTime > parseInt(expirationTime, 10)) {
-        localStorage.removeItem('sessionToken');
-        localStorage.removeItem('tokenExpiration');
+        logout();
       } else {
         getProducts();
       }
     } else {
       console.log('Token not found in localStorage.');
     }
+  };
+
+  const logout = () => {
+    const token = localStorage.getItem('sessionToken');
+    axios.post('http://localhost:8080/auth/logout', {}, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }).then((res) => {
+      console.log(res);
+      localStorage.removeItem('sessionToken');
+      localStorage.removeItem('tokenExpiration');
+      navigate('/');
+    }).catch((err) => console.error(err));
   };
 
   return (
@@ -66,13 +92,13 @@ const Products: React.FC = () => {
               </thead>
               <tbody>
                 {products.map((product, index) => (
-                  <tr key={product.id} className={index % 2 === 0 ? 'bg-gray-100' : 'bg-white'}>
+                  <tr key={index} className={index % 2 === 0 ? 'bg-gray-100' : 'bg-white'}>
                     <td className='py-2 px-4 border-b border-r'>{index + 1}</td>
                     <td className='py-2 px-4 border-b border-r'>{product.prod_name}</td>
                     <td className='py-2 px-4 border-b border-r'>{product.prod_desc}</td>
                     <td className='py-2 px-4 border-b'>
-                      <Link to={`/edit/${product.id}`} className='text-blue-500 mr-2'>Edit</Link>
-                      <button onClick={() => deleteProduct(product.id)} className='text-red-500'>Delete</button>
+                      <Link to={`/products/edit/${product._id}`} className='text-blue-500 mr-2 hover:underline'>Edit</Link>
+                      <button onClick={() => deleteProduct(product._id)} className='text-red-500 hover:underline'>Delete</button>
                     </td>
                   </tr>
                 ))}
@@ -81,7 +107,7 @@ const Products: React.FC = () => {
           </div>
         </div>
 
-        <p>Made with ❤ by ballpanuwat25</p>
+        <Footer />
       </div>
     </div>
   );

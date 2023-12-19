@@ -2,15 +2,12 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 
-import Products from "./Products";
-
 const Login: React.FC = () => {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
 
     const navigate = useNavigate();
 
-    // Login.tsx
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         axios.post("http://localhost:8080/auth/login", {
@@ -21,8 +18,7 @@ const Login: React.FC = () => {
                 const data: { authentication: { sessionToken: string } } = res.data;
                 console.log(res);
 
-                // Set token and expiration time in localStorage
-                const expirationTime = new Date().getTime() + 60 * 60 * 1000; // 1 hour in milliseconds
+                const expirationTime = new Date().getTime() + 60 * 60 * 1000;
                 localStorage.setItem('sessionToken', data?.authentication?.sessionToken);
                 localStorage.setItem('tokenExpiration', expirationTime.toString());
 

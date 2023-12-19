@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Home from './pages/Home';
 import Login from './pages/Login';
@@ -17,7 +17,7 @@ const App: React.FC = () => {
         <Route path="/register" element={<Register />} />
         <Route path="/products" element={<Products />} />
         <Route path="/products/new" element={<NewProduct />} />
-        <Route path="/products/edit/:id" element={<UpdateProduct />} />
+        <Route path="/products/edit/:_id" element={<UpdateProduct />} />
       </Routes>
     </Router>
   );

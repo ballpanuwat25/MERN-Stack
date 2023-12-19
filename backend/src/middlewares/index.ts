@@ -4,6 +4,9 @@ import { get, merge } from 'lodash';
 
 import { getUserById } from '../model/users';
 
+import dotenv from 'dotenv';
+dotenv.config();
+
 export const isOwner = (req: express.Request, res: express.Response, next: express.NextFunction) => {
     try {
         const { id } = req.params;
@@ -26,28 +29,50 @@ export const isOwner = (req: express.Request, res: express.Response, next: expre
 
 export const isAuthenticated = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
     try {
-        const token = req.cookies['sessionToken-AUTH'];
+        const authHeader = req.headers['authorization'];
+        const authToken = authHeader && authHeader.split(' ')[1];
 
-        if (!token) {
-            return res.sendStatus(403);
+        const cookieToken = req.cookies['sessionToken-AUTH'];
+
+        if (!authToken && !cookieToken) {
+            return res.sendStatus(401);
         }
 
-        jwt.verify(token, 'ef32ea7a4d29caaabcdcfb2754873caff5e76b7ec2054f84ee07543e432e2bf0', async (err: Error, decoded: any) => {
-            if (err) {
-                return res.sendStatus(403);
-            }
+        if (authToken) {
+            jwt.verify(authToken, process.env.JWT_SECRET, async (err: Error, decoded: any) => {
+                if (err) {
+                    return res.sendStatus(403);
+                }
 
-            const userId = decoded.userId;
-            const existingUser = await getUserById(userId);
+                const userId = decoded.userId;
+                const existingUser = await getUserById(userId);
 
-            if (!existingUser) {
-                return res.sendStatus(403);
-            }
+                if (!existingUser) {
+                    return res.sendStatus(403);
+                }
 
-            merge(req, { identity: existingUser });
+                merge(req, { identity: existingUser });
 
-            return next();
-        });
+                return next();
+            });
+        } else if (cookieToken) {
+            jwt.verify(cookieToken, process.env.JWT_SECRET, async (err: Error, decoded: any) => {
+                if (err) {
+                    return res.sendStatus(403);
+                }
+
+                const userId = decoded.userId;
+                const existingUser = await getUserById(userId);
+
+                if (!existingUser) {
+                    return res.sendStatus(403);
+                }
+
+                merge(req, { identity: existingUser });
+
+                return next();
+            });
+        }
     } catch (error) {
         console.log(error);
         return res.sendStatus(400);

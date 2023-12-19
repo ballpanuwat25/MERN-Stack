@@ -1,8 +1,32 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+
 import Header from '../components/Header';
-import { Link } from 'react-router-dom';
+import Footer from '../components/Footer';
 
 const NewProducts: React.FC = () => {
+  const [prodName, setProdName] = useState('');
+  const [prodDesc, setProdDesc] = useState('');
+
+  const navigate = useNavigate();
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const token = localStorage.getItem('sessionToken');
+    axios.post('http://localhost:8080/products', {
+      prod_name: prodName,
+      prod_desc: prodDesc,
+    }, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }).then((res) => {
+      console.log(res);
+      navigate('/products');
+    }).catch((err) => console.error(err));
+  };
+
   return (
     <div className="w-full h-screen">
       <Header />
@@ -11,7 +35,7 @@ const NewProducts: React.FC = () => {
 
         <div className="w-1/2 h-full bg-white rounded-xl p-4 border-2">
           <div className="w-full h-full overflow-y-scroll pr-4 flex justify-center items-center">
-            <form className="w-1/2 rounded-xl border-2 p-4">
+            <form onSubmit={handleSubmit} className="w-1/2 rounded-xl border-2 p-4">
               <div className="mb-4">
                 <label htmlFor="prod_name" className="block text-gray-700 text-sm font-bold mb-2">
                   Product Name
@@ -19,6 +43,7 @@ const NewProducts: React.FC = () => {
                 <input
                   type="text"
                   id="prod_name"
+                  onChange={(e) => setProdName(e.target.value)}
                   className="w-full p-2 border rounded-md focus:outline-none focus:border-zinc-800"
                 />
               </div>
@@ -29,6 +54,7 @@ const NewProducts: React.FC = () => {
                 </label>
                 <textarea
                   id="prod_desc"
+                  onChange={(e) => setProdDesc(e.target.value)}
                   className="w-full p-2 border rounded-md focus:outline-none focus:border-zinc-800"
                   rows={7}
                 />
@@ -44,7 +70,7 @@ const NewProducts: React.FC = () => {
           </div>
         </div>
 
-        <p>Made with ❤ by ballpanuwat25</p>
+        <Footer />
       </div>
     </div>
   );
